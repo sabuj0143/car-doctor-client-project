@@ -1,11 +1,15 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import login from '../../assets/images/login/login.svg'
 import { useContext } from 'react';
 import { AuthContext } from '../../Providers/AuthProvider';
 
 const Login = () => {
 
-    const {signIn} = useContext(AuthContext);
+    const { signIn } = useContext(AuthContext);
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const from = location.state?.from?.pathname || '/'
 
     const handleLogin = event => {
         event.preventDefault();
@@ -15,16 +19,34 @@ const Login = () => {
         const email = form.email.value;
         const password = form.password.value;
 
-        console.log(name, email, password);
+        // console.log( email, password);
 
         signIn(email, password)
-        .then(result => {
-            const loggedUser = result.user;
-            console.log(loggedUser);
-        })
-        .catch(error => {
-            console.log(error);
-        })
+            .then(result => {
+                const user = result.user;
+                const loggedUser = {
+                    email: user.email
+                }
+                console.log(loggedUser);
+
+                fetch('http://localhost:5000/jwt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(loggedUser)
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        // console.log("JWT Res", data)
+                        // Token save to local storage
+                        localStorage.setItem('car-doctor-token', data.token);
+                        navigate(from, { replace: true })
+                    })
+            })
+            .catch(error => {
+                console.log(error);
+            })
 
     }
     return (
